@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PactForge</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .chatbox {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #333;
+            color: #fff;
+        }
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .message {
+            padding: 10px;
+            margin: 5px;
+            border-radius: 10px;
+            max-width: 80%;
+            white-space: pre-wrap; /* Preserve formatting */
+        }
+        .message.assistant {
+            background-color: #555;
+            align-self: flex-start;
+        }
+        .message.user {
+            background-color: #007bff;
+            align-self: flex-end;
+            color: #fff;
+        }
+        .input-area {
+            padding: 10px;
+            background-color: #444;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .input-container {
+            display: flex;
+            width: 100%;
+            max-width: 800px;
+        }
+        #user-input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #666;
+            color: #fff;
+        }
+        #send-btn {
+            margin-left: 10px;
+            padding: 10px 20px;
+            background-color: #555;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #send-btn:hover {
+            background-color: #777;
+        }
+        .disclaimer {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="chatbox">
+        <div class="messages"></div>
+        <div class="input-area">
+            <div class="input-container">
+                <input type="text" id="user-input" placeholder="Type your message...">
+                <button id="send-btn">Send</button>
+            </div>
+            <p class="disclaimer">PactForge can make mistakes.</p>
+        </div>
+    </div>
+    <script>
+        const questions = {
+            nda: [
+                { field: "disclosingParty", question: "Please provide the name of the disclosing party." },
+                { field: "receivingParty", question: "Please provide the name of the receiving party." },
+                { field: "confidentialInfo", question: "Please define what constitutes confidential information." },
+                { field: "purpose", question: "What is the purpose of this disclosure?" },
+                { field: "duration", question: "How long should the agreement last?" },
+                { field: "obligations", question: "What are the obligations of the receiving party?" },
+                { field: "governingLaw", question: "Which state's law should govern this agreement?" },
+                { field: "extraInfo", question: "Is there any extra information or specific clauses you'd like to include in the agreement?" }
+            ],
+            contractor: [
+                { field: "contractorName", question: "Please provide the contractor's name." },
+                { field: "clientName", question: "Please provide the client's name." },
+                { field: "scopeOfWork", question: "What is the scope of work?" },
+                { field: "paymentTerms", question: "What are the payment terms?" },
+                { field: "duration", question: "What is the duration of the contract?" },
+                { field: "extraInfo", question: "Is there any extra information or specific clauses you'd like to include in the agreement?" }
+            ],
+            rent: [
+                { field: "landlordName", question: "Please provide the landlord's name." },
+                { field: "tenantName", question: "Please provide the tenant's name." },
+                { field: "propertyAddress", question: "What is the property address?" },
+                { field: "rentAmount", question: "What is the rent amount?" },
+                { field: "leaseTerm", question: "What is the lease term?" },
+                { field: "extraInfo", question: "Is there any extra information or specific clauses you'd like to include in the agreement?" }
+            ],
+            employee: [
+                { field: "employerName", question: "Please provide the employer's name." },
+                { field: "employeeName", question: "Please provide the employee's name." },
+                { field: "jobTitle", question: "What is the job title?" },
+                { field: "salary", question: "What is the salary?" },
+                { field: "startDate", question: "What is the start date?" },
+                { field: "extraInfo", question: "Is there any extra information or specific clauses you'd like to include in the agreement?" }
+            ],
+            franchise: [
+                { field: "franchisorName", question: "Please provide the franchisor's name." },
+                { field: "franchiseeName", question: "Please provide the franchisee's name." },
+                { field: "franchiseFee", question: "What is the franchise fee?" },
+                { field: "royaltyPayments", question: "What are the royalty payments?" },
+                { field: "territory", question: "What is the territory?" },
+                { field: "extraInfo", question: "Is there any extra information or specific clauses you'd like to include in the agreement?" }
+            ]
+        };
+
+        let agreementType = null;
+        let currentQuestions = [];
+        let agreementData = { type: null, data: {} };
+        let currentQuestionIndex = -1;
+
+        // Replace with your Gemini API key
+        const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY'; // Add your key here
+
+        function addMessage(sender, text) {
+            const messagesDiv = document.querySelector('.messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', sender);
+            messageDiv.textContent = text;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function constructPrompt(type, data) {
+            let prompt = `You are a legal document generator. Generate a professionally formatted ${type.toUpperCase()} legal agreement in Markdown. The document must include:
+- A title (e.g., # Non-Disclosure Agreement)
+- A preamble identifying the parties and effective date
+- Numbered sections (e.g., ## 1. Definitions, ## 2. Obligations)
+- Subclauses (e.g., 1.1, 1.2) where appropriate
+- Signature lines for all parties
+- A formal, legally appropriate tone
+
+Use the following details to populate the agreement. Ensure all clauses are clear, concise, and legally structured. If the extra information is provided, interpret it as additional requirements and generate specific clauses to address it, integrating them logically into the document (e.g., under Obligations, Miscellaneous, or a new section). If the extra information is vague or irrelevant, include it as a miscellaneous clause or omit it if inappropriate, explaining your reasoning in a comment within the document.
+
+Details:
+`;
+            switch (type) {
+                case 'nda':
+                    prompt += `- Disclosing Party: ${data.disclosingParty}\n` +
+                             `- Receiving Party: ${data.receivingParty}\n` +
+                             `- Confidential Information: ${data.confidentialInfo}\n` +
+                             `- Purpose: ${data.purpose}\n` +
+                             `- Duration: ${data.duration}\n` +
+                             `- Obligations: ${data.obligations}\n` +
+                             `- Governing Law: ${data.governingLaw}\n` +
+                             (data.extraInfo ? `- Extra Information: ${data.extraInfo}\n` : '');
+                    break;
+                case 'contractor':
+                    prompt += `- Contractor Name: ${data.contractorName}\n` +
+                             `- Client Name: ${data.clientName}\n` +
+                             `- Scope of Work: ${data.scopeOfWork}\n` +
+                             `- Payment Terms: ${data.paymentTerms}\n` +
+                             `- Duration: ${data.duration}\n` +
+                             (data.extraInfo ? `- Extra Information: ${data.extraInfo}\n` : '');
+                    break;
+                case 'rent':
+                    prompt += `- Landlord Name: ${data.landlordName}\n` +
+                             `- Tenant Name: ${data.tenantName}\n` +
+                             `- Property Address: ${data.propertyAddress}\n` +
+                             `- Rent Amount: ${data.rentAmount}\n` +
+                             `- Lease Term: ${data.leaseTerm}\n` +
+                             (data.extraInfo ? `- Extra Information: ${data.extraInfo}\n` : '');
+                    break;
+                case 'employee':
+                    prompt += `- Employer Name: ${data.employerName}\n` +
+                             `- Employee Name: ${data.employeeName}\n` +
+                             `- Job Title: ${data.jobTitle}\n` +
+                             `- Salary: ${data.salary}\n` +
+                             `- Start Date: ${data.startDate}\n` +
+                             (data.extraInfo ? `- Extra Information: ${data.extraInfo}\n` : '');
+                    break;
+                case 'franchise':
+                    prompt += `- Franchisor Name: ${data.franchisorName}\n` +
+                             `- Franchisee Name: ${data.franchiseeName}\n` +
+                             `- Franchise Fee: ${data.franchiseFee}\n` +
+                             `- Royalty Payments: ${data.royaltyPayments}\n` +
+                             `- Territory: ${data.territory}\n` +
+                             (data.extraInfo ? `- Extra Information: ${data.extraInfo}\n` : '');
+                    break;
+                default:
+                    return '';
+            }
+            prompt += `\nEnsure the document is complete, with no placeholders or incomplete sections. If extra information requires new clauses, label them clearly (e.g., ## 3. Additional Provisions).`;
+            return prompt;
+        }
+
+        async function generateDocument(prompt) {
+            if (!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY') {
+                console.error('Invalid or missing Gemini API key');
+                return 'Error: Please configure a valid Gemini API key.';
+            }
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{ text: prompt }]
+                        }]
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorDetails = await response.text();
+                    throw new Error(`API request failed with status ${response.status}: ${errorDetails}`);
+                }
+
+                const data = await response.json();
+
+                // Safely navigate response structure
+                if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
+                    throw new Error('Unexpected API response structure');
+                }
+
+                const documentText = data.candidates[0].content.parts[0].text;
+                return documentText;
+            } catch (error) {
+                console.error('Error generating document:', error);
+                return `Error: Unable to generate document. ${error.message}`;
+            }
+        }
+
+        function handleUserInput() {
+            const input = document.getElementById('user-input').value.trim();
+            if (input) {
+                addMessage('user', input);
+                processInput(input);
+                document.getElementById('user-input').value = '';
+            }
+        }
+
+        function processInput(input) {
+            if (currentQuestionIndex === -1) {
+                const type = input.toLowerCase();
+                if (questions[type]) {
+                    agreementType = type;
+                    agreementData.type = type;
+                    currentQuestions = questions[type];
+                    currentQuestionIndex = 0;
+                    addMessage('assistant', `Great, let's create a ${type.toUpperCase()}. ${currentQuestions[0].question}`);
+                } else {
+                    addMessage('assistant', "Sorry, I don't support that type. Please choose from: nda, contractor, rent, employee, franchise.");
+                }
+            } else if (currentQuestionIndex < currentQuestions.length) {
+                const field = currentQuestions[currentQuestionIndex].field;
+                agreementData.data[field] = input;
+                currentQuestionIndex++;
+                if (currentQuestionIndex < currentQuestions.length) {
+                    addMessage('assistant', currentQuestions[currentQuestionIndex].question);
+                } else {
+                    addMessage('assistant', "All information collected. Generating your document...");
+                    const prompt = constructPrompt(agreementType, agreementData.data);
+                    generateDocument(prompt).then(documentText => {
+                        addMessage('assistant', documentText);
+                        addMessage('assistant', "Would you like to create another agreement?");
+                        currentQuestionIndex = -1;
+                        agreementType = null;
+                        agreementData = { type: null, data: {} };
+                        currentQuestions = [];
+                    });
+                }
+            } else {
+                if (input.toLowerCase() === 'yes') {
+                    addMessage('assistant', "What type of agreement would you like to create? (nda, contractor, rent, employee, franchise)");
+                    currentQuestionIndex = -1;
+                } else {
+                    addMessage('assistant', "Thank you for using PactForge!");
+                }
+            }
+        }
+
+        document.getElementById('send-btn').addEventListener('click', handleUserInput);
+        document.getElementById('user-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleUserInput();
+        });
+
+        // Initialize with welcome message
+        addMessage('assistant', "Welcome to PactForge. What type of agreement would you like to create? (nda, contractor, rent, employee, franchise)");
+    </script>
+</body>
+</html>
