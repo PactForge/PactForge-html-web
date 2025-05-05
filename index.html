@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PactForge AI - Legal Document Generator (Demo)</title>
   <style>
     body {
@@ -94,7 +95,7 @@
       text-align: center;
       padding: 10px;
       background-color: #1a1a1a;
-      color: white; /* Changed the default color of the footer text to white */
+      color: white;
     }
 
     #footer a {
@@ -114,6 +115,50 @@
       word-wrap: break-word;
       max-width: 70%;
     }
+
+    /* Responsive adjustments for mobile */
+    @media (max-width: 600px) {
+      #top-header h1 {
+        font-size: 20px;
+      }
+
+      #chatbox {
+        padding: 10px;
+      }
+
+      .user, .bot {
+        max-width: 85%;
+        font-size: 14px;
+        padding: 8px 12px;
+      }
+
+      #inputArea {
+        padding: 10px;
+        gap: 8px;
+      }
+
+      input {
+        font-size: 14px;
+        padding: 8px;
+      }
+
+      button {
+        font-size: 14px;
+        padding: 8px 12px;
+        touch-action: manipulation;
+      }
+
+      #footer {
+        font-size: 10px;
+        padding: 8px;
+      }
+
+      pre {
+        max-width: 85%;
+        font-size: 12px;
+        padding: 8px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -127,9 +172,10 @@
   </div>
   <div id="footer" style="color: white;">
     © 2025 @PactForge. All Rights Reserved.<br>
-    This is a very basic demo version of PactForge AI, not our exact algorithm. Generated documents are not reccomended for legal use. For highly tailored agreements powered by our advanced algorithm, contact <a href="mailto:pactforge@gmail.com" style="color: #0a84ff;">pactforge@gmail.com</a>
+    This is a very basic demo version of PactForge AI, not our exact algorithm. Generated documents are not recommended for legal use. For highly tailored agreements powered by our advanced algorithm, contact <a href="/cdn-cgi/l/email-protection#2e5e4f4d5a48415c494b6e49434f4742004d4143" style="color: #0a84ff;"><span class="__cf_email__" data-cfemail="fbcbdad8cfddd4c9dcdefbdcd6dad2d795d8d4d6">[email&#160;protected]</span></a>
   </div>
 
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
   <script>
     // State management
     let state = {
@@ -733,5 +779,6 @@
     // Initialize
     appendMessage("bot", "What type of legal agreement would you like to create? Options: NDA, Employment, Lease, Contractor, Franchise.");
   </script>
+  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93af5c7ea8e06771',t:'MTc0NjQzODkxNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
