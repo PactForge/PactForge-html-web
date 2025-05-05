@@ -1,315 +1,737 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PactForge</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
-        .chatbox {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            background-color: #333;
-            color: #fff;
-        }
-        .messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-        }
-        .message {
-            padding: 10px;
-            margin: 5px;
-            border-radius: 10px;
-            max-width: 80%;
-            white-space: pre-wrap; /* Preserve formatting */
-        }
-        .message.assistant {
-            background-color: #555;
-            align-self: flex-start;
-        }
-        .message.user {
-            background-color: #007bff;
-            align-self: flex-end;
-            color: #fff;
-        }
-        .input-area {
-            padding: 10px;
-            background-color: #444;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .input-container {
-            display: flex;
-            width: 100%;
-            max-width: 800px;
-        }
-        #user-input {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            background-color: #666;
-            color: #fff;
-        }
-        #send-btn {
-            margin-left: 10px;
-            padding: 10px 20px;
-            background-color: #555;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #send-btn:hover {
-            background-color: #777;
-        }
-        .disclaimer {
-            margin-top: 5px;
-            font-size: 12px;
-            color: #aaa;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>PactForge AI - Legal Document Generator (Demo)</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    #top-header {
+      background-color: #1a1a1a;
+      padding: 15px;
+      border-bottom: 1px solid #333;
+      text-align: center;
+    }
+
+    #top-header h1 {
+      font-size: 28px;
+      font-weight: bold;
+      color: #ffffff;
+      margin: 0;
+    }
+
+    #chatbox {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      border-bottom: 1px solid #333;
+    }
+
+    .chat {
+      margin-bottom: 15px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .user {
+      align-self: flex-end;
+      background-color: #1f1f1f;
+      color: #fff;
+      padding: 10px 15px;
+      border-radius: 12px;
+      max-width: 70%;
+    }
+
+    .bot {
+      align-self: flex-start;
+      background-color: #333;
+      color: #fff;
+      padding: 10px 15px;
+      border-radius: 12px;
+      max-width: 70%;
+    }
+
+    #inputArea {
+      padding: 15px;
+      background-color: #1c1c1c;
+      display: flex;
+      gap: 10px;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px;
+      background-color: #2c2c2c;
+      border: 1px solid #555;
+      color: white;
+      border-radius: 8px;
+    }
+
+    button {
+      background-color: #0a84ff;
+      border: none;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #005bb5;
+    }
+
+    #footer {
+      font-size: 12px;
+      text-align: center;
+      padding: 10px;
+      background-color: #1a1a1a;
+      color: #777;
+    }
+
+    #footer a {
+      color: #0a84ff;
+      text-decoration: none;
+    }
+
+    #footer a:hover {
+      text-decoration: underline;
+    }
+
+    pre {
+      background-color: #1f1f1f;
+      padding: 10px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-width: 70%;
+    }
+  </style>
 </head>
 <body>
-    <div class="chatbox">
-        <div class="messages"></div>
-        <div class="input-area">
-            <div class="input-container">
-                <input type="text" id="user-input" placeholder="Type your message...">
-                <button id="send-btn">Send</button>
-            </div>
-            <p class="disclaimer">PactForge can make mistakes.</p>
-        </div>
-    </div>
-    <script>
-        const questions = {
-            nda: [
-                { field: "disclosingParty", question: "Please provide the name of the disclosing party." },
-                { field: "receivingParty", question: "Please provide the name of the receiving party." },
-                { field: "confidentialInfo", question: "Please define what constitutes confidential information." },
-                { field: "purpose", question: "What is the purpose of this disclosure?" },
-                { field: "duration", question: "How long should the agreement last?" },
-                { field: "obligations", question: "What are the obligations of the receiving party?" },
-                { field: "governingLaw", question: "Which state's law should govern this agreement?" },
-                { field: "extraInfo", question: "Is there any extra information or specific clauses you'd like to include in the agreement?" }
-            ],
-            contractor: [
-                { field: "contractorName", question: "Please provide the contractor's name." },
-                { field: "clientName", question: "Please provide the client's name." },
-                { field: "scopeOfWork", question: "What is the scope of work?" },
-                { field: "paymentTerms", question: "What are the payment terms?" },
-                { field: "duration", question: "What is the duration of the contract?" },
-                { field: "extraInfo", question: "Is there any extra information or specific clauses you'd like to include in the agreement?" }
-            ],
-            rent: [
-                { field: "landlordName", question: "Please provide the landlord's name." },
-                { field: "tenantName", question: "Please provide the tenant's name." },
-                { field: "propertyAddress", question: "What is the property address?" },
-                { field: "rentAmount", question: "What is the rent amount?" },
-                { field: "leaseTerm", question: "What is the lease term?" },
-                { field: "extraInfo", question: "Is there any extra information or specific clauses you'd like to include in the agreement?" }
-            ],
-            employee: [
-                { field: "employerName", question: "Please provide the employer's name." },
-                { field: "employeeName", question: "Please provide the employee's name." },
-                { field: "jobTitle", question: "What is the job title?" },
-                { field: "salary", question: "What is the salary?" },
-                { field: "startDate", question: "What is the start date?" },
-                { field: "extraInfo", question: "Is there any extra information or specific clauses you'd like to include in the agreement?" }
-            ],
-            franchise: [
-                { field: "franchisorName", question: "Please provide the franchisor's name." },
-                { field: "franchiseeName", question: "Please provide the franchisee's name." },
-                { field: "franchiseFee", question: "What is the franchise fee?" },
-                { field: "royaltyPayments", question: "What are the royalty payments?" },
-                { field: "territory", question: "What is the territory?" },
-                { field: "extraInfo", question: "Is there any extra information or specific clauses you'd like to include in the agreement?" }
-            ]
-        };
+  <div id="top-header">
+    <h1>PactForge AI</h1>
+  </div>
+  <div id="chatbox"></div>
+  <div id="inputArea">
+    <input type="text" id="inputField" placeholder="Type your response..." />
+    <button onclick="handleInput()">Send</button>
+  </div>
+  <div id="footer">
+    © 2025 @PactForge. All Rights Reserved.<br>
+    This is a very basic demo version of PactForge AI, not our exact algorithm. Generated documents are not reccomended for legal use. For highly tailored agreements powered by our advanced algorithm, contact <a href="mailto:pactforge@gmail.com">pactforge@gmail.com</a> 
+  </div>
 
-        let agreementType = null;
-        let currentQuestions = [];
-        let agreementData = { type: null, data: {} };
-        let currentQuestionIndex = -1;
+  <script>
+    // State management
+    let state = {
+      step: 0, // 0: determine type, 1: collect details, 1.5: extra clauses, 2: generate
+      agreementType: null,
+      details: {},
+      currentQuestionIndex: 0,
+      extraClauses: [],
+      extraClauseStage: null, // "ask", "describe", "custom", "more"
+      conversation: []
+    };
 
-        // Replace with your Gemini API key
-        const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY'; // Add your key here
+    // UI utilities
+    const chatbox = document.getElementById("chatbox");
+    const inputField = document.getElementById("inputField");
 
-        function addMessage(sender, text) {
-            const messagesDiv = document.querySelector('.messages');
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', sender);
-            messageDiv.textContent = text;
-            messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    // Add Enter key event listener
+    inputField.addEventListener("keypress", function(event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        handleInput();
+      }
+    });
+
+    function appendMessage(sender, message) {
+      const div = document.createElement("div");
+      div.className = `chat ${sender}`;
+      if (sender === "bot" && message.includes('\n')) {
+        const pre = document.createElement("pre");
+        pre.innerText = message;
+        div.appendChild(pre);
+      } else {
+        div.innerText = message;
+      }
+      chatbox.appendChild(div);
+      chatbox.scrollTop = chatbox.scrollHeight;
+      state.conversation.push({ sender, message });
+    }
+
+    // Validation functions
+    function validateDate(dateStr) {
+      const regex = /^\d{2}\/\d{2}\/\d{4}$/;
+      if (!regex.test(dateStr)) return false;
+      const [day, month, year] = dateStr.split('/').map(Number);
+      const date = new Date(year, month - 1, day);
+      return date.getDate() === day && date.getMonth() + 1 === month && date.getFullYear() === year;
+    }
+
+    function validateAmount(amountStr) {
+      return !isNaN(parseFloat(amountStr)) && isFinite(amountStr);
+    }
+
+    function validateDayOfMonth(dayStr) {
+      const cleanedDay = dayStr.replace(/(th|rd|nd|st)$/i, '').trim();
+      const day = parseInt(cleanedDay);
+      return !isNaN(day) && day >= 1 && day <= 31 ? day : false;
+    }
+
+    function validateState(stateStr) {
+      const toTitleCase = str => str.toLowerCase().replace(/(^|\s)\w/g, letter => letter.toUpperCase());
+      const normalizedInput = toTitleCase(stateStr.trim());
+      const states = [
+        "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+        "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+        "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+        "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+        "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
+      ];
+      return states.includes(normalizedInput) ? normalizedInput : false;
+    }
+
+    function validatePercentage(percentageStr) {
+      const num = parseFloat(percentageStr);
+      return !isNaN(num) && num >= 0 && num <= 100;
+    }
+
+    function validateCurrency(currencyStr) {
+      const currencies = ["INR", "USD", "EUR"];
+      return currencies.includes(currencyStr.toUpperCase()) ? currencyStr.toUpperCase() : false;
+    }
+
+    // Enhanced clause matching with stakeholder input integration
+    function matchClause(input, agreementType, details) {
+      const clauses = agreementTypes[agreementType].additionalClauses;
+      input = input.toLowerCase().trim();
+      let bestMatch = null;
+      let highestScore = 0;
+
+      for (const clause of clauses) {
+        let score = 0;
+        for (const keyword of clause.keywords) {
+          if (input.includes(keyword.toLowerCase())) {
+            score += 1;
+          }
         }
-
-        function constructPrompt(type, data) {
-            let prompt = `You are a legal document generator. Generate a professionally formatted ${type.toUpperCase()} legal agreement in Markdown. The document must include:
-- A title (e.g., # Non-Disclosure Agreement)
-- A preamble identifying the parties and effective date
-- Numbered sections (e.g., ## 1. Definitions, ## 2. Obligations)
-- Subclauses (e.g., 1.1, 1.2) where appropriate
-- Signature lines for all parties
-- A formal, legally appropriate tone
-
-Use the following details to populate the agreement. Ensure all clauses are clear, concise, and legally structured. If the extra information is provided, interpret it as additional requirements and generate specific clauses to address it, integrating them logically into the document (e.g., under Obligations, Miscellaneous, or a new section). If the extra information is vague or irrelevant, include it as a miscellaneous clause or omit it if inappropriate, explaining your reasoning in a comment within the document.
-
-Details:
-`;
-            switch (type) {
-                case 'nda':
-                    prompt += `- Disclosing Party: ${data.disclosingParty}\n` +
-                             `- Receiving Party: ${data.receivingParty}\n` +
-                             `- Confidential Information: ${data.confidentialInfo}\n` +
-                             `- Purpose: ${data.purpose}\n` +
-                             `- Duration: ${data.duration}\n` +
-                             `- Obligations: ${data.obligations}\n` +
-                             `- Governing Law: ${data.governingLaw}\n` +
-                             (data.extraInfo ? `- Extra Information: ${data.extraInfo}\n` : '');
-                    break;
-                case 'contractor':
-                    prompt += `- Contractor Name: ${data.contractorName}\n` +
-                             `- Client Name: ${data.clientName}\n` +
-                             `- Scope of Work: ${data.scopeOfWork}\n` +
-                             `- Payment Terms: ${data.paymentTerms}\n` +
-                             `- Duration: ${data.duration}\n` +
-                             (data.extraInfo ? `- Extra Information: ${data.extraInfo}\n` : '');
-                    break;
-                case 'rent':
-                    prompt += `- Landlord Name: ${data.landlordName}\n` +
-                             `- Tenant Name: ${data.tenantName}\n` +
-                             `- Property Address: ${data.propertyAddress}\n` +
-                             `- Rent Amount: ${data.rentAmount}\n` +
-                             `- Lease Term: ${data.leaseTerm}\n` +
-                             (data.extraInfo ? `- Extra Information: ${data.extraInfo}\n` : '');
-                    break;
-                case 'employee':
-                    prompt += `- Employer Name: ${data.employerName}\n` +
-                             `- Employee Name: ${data.employeeName}\n` +
-                             `- Job Title: ${data.jobTitle}\n` +
-                             `- Salary: ${data.salary}\n` +
-                             `- Start Date: ${data.startDate}\n` +
-                             (data.extraInfo ? `- Extra Information: ${data.extraInfo}\n` : '');
-                    break;
-                case 'franchise':
-                    prompt += `- Franchisor Name: ${data.franchisorName}\n` +
-                             `- Franchisee Name: ${data.franchiseeName}\n` +
-                             `- Franchise Fee: ${data.franchiseFee}\n` +
-                             `- Royalty Payments: ${data.royaltyPayments}\n` +
-                             `- Territory: ${data.territory}\n` +
-                             (data.extraInfo ? `- Extra Information: ${data.extraInfo}\n` : '');
-                    break;
-                default:
-                    return '';
-            }
-            prompt += `\nEnsure the document is complete, with no placeholders or incomplete sections. If extra information requires new clauses, label them clearly (e.g., ## 3. Additional Provisions).`;
-            return prompt;
+        if (score > highestScore) {
+          highestScore = score;
+          bestMatch = clause;
         }
+      }
 
-        async function generateDocument(prompt) {
-            if (!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY') {
-                console.error('Invalid or missing Gemini API key');
-                return 'Error: Please configure a valid Gemini API key.';
-            }
-
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{ text: prompt }]
-                        }]
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorDetails = await response.text();
-                    throw new Error(`API request failed with status ${response.status}: ${errorDetails}`);
-                }
-
-                const data = await response.json();
-
-                // Safely navigate response structure
-                if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
-                    throw new Error('Unexpected API response structure');
-                }
-
-                const documentText = data.candidates[0].content.parts[0].text;
-                return documentText;
-            } catch (error) {
-                console.error('Error generating document:', error);
-                return `Error: Unable to generate document. ${error.message}`;
-            }
+      if (bestMatch && highestScore > 0) {
+        let tailoredText = bestMatch.text;
+        // Incorporate stakeholder input and details
+        if (details.stakeholderInput) {
+          tailoredText = tailoredText.replace("[stakeholderInput]", details.stakeholderInput);
         }
-
-        function handleUserInput() {
-            const input = document.getElementById('user-input').value.trim();
-            if (input) {
-                addMessage('user', input);
-                processInput(input);
-                document.getElementById('user-input').value = '';
-            }
-        }
-
-        function processInput(input) {
-            if (currentQuestionIndex === -1) {
-                const type = input.toLowerCase();
-                if (questions[type]) {
-                    agreementType = type;
-                    agreementData.type = type;
-                    currentQuestions = questions[type];
-                    currentQuestionIndex = 0;
-                    addMessage('assistant', `Great, let's create a ${type.toUpperCase()}. ${currentQuestions[0].question}`);
-                } else {
-                    addMessage('assistant', "Sorry, I don't support that type. Please choose from: nda, contractor, rent, employee, franchise.");
-                }
-            } else if (currentQuestionIndex < currentQuestions.length) {
-                const field = currentQuestions[currentQuestionIndex].field;
-                agreementData.data[field] = input;
-                currentQuestionIndex++;
-                if (currentQuestionIndex < currentQuestions.length) {
-                    addMessage('assistant', currentQuestions[currentQuestionIndex].question);
-                } else {
-                    addMessage('assistant', "All information collected. Generating your document...");
-                    const prompt = constructPrompt(agreementType, agreementData.data);
-                    generateDocument(prompt).then(documentText => {
-                        addMessage('assistant', documentText);
-                        addMessage('assistant', "Would you like to create another agreement?");
-                        currentQuestionIndex = -1;
-                        agreementType = null;
-                        agreementData = { type: null, data: {} };
-                        currentQuestions = [];
-                    });
-                }
-            } else {
-                if (input.toLowerCase() === 'yes') {
-                    addMessage('assistant', "What type of agreement would you like to create? (nda, contractor, rent, employee, franchise)");
-                    currentQuestionIndex = -1;
-                } else {
-                    addMessage('assistant', "Thank you for using PactForge!");
-                }
-            }
-        }
-
-        document.getElementById('send-btn').addEventListener('click', handleUserInput);
-        document.getElementById('user-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleUserInput();
+        Object.keys(details).forEach(key => {
+          tailoredText = tailoredText.replace(new RegExp(`\\[${key}\\]`, 'g'), details[key]);
         });
+        return { title: bestMatch.title, text: tailoredText };
+      }
+      return null;
+    }
 
-        // Initialize with welcome message
-        addMessage('assistant', "Welcome to PactForge. What type of agreement would you like to create? (nda, contractor, rent, employee, franchise)");
-    </script>
+    // Clause database with tailored clauses
+    const agreementTypes = {
+      "NDA": {
+        detailQuestions: [
+          { key: "disclosingParty", question: "Who is the Disclosing Party (full name or entity)?", validation: input => input.trim().length > 0 },
+          { key: "receivingParty", question: "Who is the Receiving Party (full name or entity)?", validation: input => input.trim().length > 0 },
+          { key: "effectiveDate", question: "What is the effective date (DD/MM/YYYY)?", validation: validateDate },
+          { key: "duration", question: "What is the duration of the agreement (e.g., 2 years)?", validation: input => input.trim().length > 0 },
+          { key: "purpose", question: "What is the specific purpose of this NDA (e.g., joint product development)?", validation: input => input.trim().length > 0 },
+          { key: "stakeholderInput", question: "Provide any specific input or requirements from stakeholders (e.g., legal team, business partners) for this NDA.", validation: input => true },
+          { key: "jurisdictionState", question: "Which state governs the agreement (e.g., Karnataka)?", validation: validateState },
+          { key: "jurisdictionCity", question: "Which city for jurisdiction (e.g., Bengaluru)?", validation: input => input.trim().length > 0 }
+        ],
+        clauses: [
+          {
+            title: "Definition of Confidential Information",
+            text: "\"Confidential Information\" refers to any data, materials, or knowledge disclosed by [disclosingParty] to [receivingParty] for the purpose of [purpose], including but not limited to proprietary technology, financial projections, customer databases, strategic plans, and [stakeholderInput]. Such information is deemed confidential if marked as such or if its proprietary nature is reasonably apparent."
+          },
+          {
+            title: "Obligations of Receiving Party",
+            text: "[receivingParty] shall:\n* Maintain the confidentiality of [disclosingParty]'s Confidential Information using measures at least as stringent as those used for its own proprietary data, tailored to the sensitivity of [purpose].\n* Use the Confidential Information solely for [purpose] and not for any competitive or unrelated purpose.\n* Restrict disclosure to employees or agents who have a direct need to know for [purpose], each bound by equivalent confidentiality terms.\n* Implement security protocols as specified by [stakeholderInput], including [stakeholderInput].\n* Notify [disclosingParty] within 24 hours of any suspected breach, with full cooperation in mitigation efforts."
+          },
+          {
+            title: "Exceptions",
+            text: "Confidentiality obligations do not apply to information that:\n* Becomes public through no fault of [receivingParty].\n* Was lawfully in [receivingParty]'s possession prior to disclosure, as evidenced by written records.\n* Is received from a third party with no confidentiality obligation.\n* Is independently developed by [receivingParty] without reference to [disclosingParty]'s information.\n* Must be disclosed under a legal order, provided [receivingParty] notifies [disclosingParty] promptly to seek protective measures."
+          },
+          {
+            title: "Return or Destruction",
+            text: "Upon termination or at [disclosingParty]'s request, [receivingParty] shall return or destroy all Confidential Information related to [purpose], including derivatives, except for one archival copy retained solely for compliance with [stakeholderInput]. Destruction must be certified in writing within 7 days."
+          },
+          {
+            title: "No Implied Licenses",
+            text: "This Agreement grants no license or rights to [receivingParty] beyond the limited use of Confidential Information for [purpose]. All intellectual property remains with [disclosingParty]."
+          },
+          {
+            title: "Term and Termination",
+            text: "Effective from [effectiveDate], this Agreement remains in force for [duration], unless terminated earlier by 30 days' written notice or immediately upon material breach. Confidentiality obligations survive for [duration] post-termination."
+          },
+          {
+            title: "Remedies",
+            text: "Breach by [receivingParty] may cause irreparable harm to [disclosingParty], entitling [disclosingParty] to injunctive relief without bond, in addition to damages and legal fees, as stipulated by [stakeholderInput]."
+          },
+          {
+            title: "Governing Law and Jurisdiction",
+            text: "This Agreement is governed by the laws of [jurisdictionState], with exclusive jurisdiction in [jurisdictionCity] courts."
+          },
+          {
+            title: "Miscellaneous",
+            text: "* **Entire Agreement**: This is the sole agreement for [purpose], superseding all prior discussions.\n* **Amendments**: Changes require written consent of both Parties.\n* **Severability**: Invalid provisions do not affect others.\n* **Notices**: Notices must be written and delivered to addresses above."
+          }
+        ],
+        additionalClauses: [
+          {
+            title: "Non-Solicitation",
+            keywords: ["non-solicitation", "solicit", "poach", "hire", "recruit", "client", "employee"],
+            text: "For [duration] post-termination, [receivingParty] shall not solicit or engage any employees, contractors, or clients of [disclosingParty] involved in [purpose], as specified by [stakeholderInput]."
+          },
+          {
+            title: "Non-Competition",
+            keywords: ["non-compete", "competition", "rival", "compete", "business"],
+            text: "For [duration] post-termination, [receivingParty] shall not engage in activities directly competing with [disclosingParty]'s business related to [purpose] within [jurisdictionState], per [stakeholderInput]."
+          },
+          {
+            title: "Data Protection",
+            keywords: ["data", "privacy", "protection", "security", "gdpr"],
+            text: "[receivingParty] shall comply with all data protection laws applicable to [purpose], implementing measures like [stakeholderInput] to safeguard personal data shared by [disclosingParty]."
+          }
+        ]
+      },
+      "Employment": {
+        detailQuestions: [
+          { key: "employerName", question: "What is the Employer's name or entity?", validation: input => input.trim().length > 0 },
+          { key: "employeeName", question: "What is the Employee's full name?", validation: input => input.trim().length > 0 },
+          { key: "commencementDate", question: "What is the commencement date (DD/MM/YYYY)?", validation: validateDate },
+          { key: "jobTitle", question: "What is the Employee's job title?", validation: input => input.trim().length > 0 },
+          { key: "businessDescription", question: "Describe the Employer's business (e.g., software development)?", validation: input => input.trim().length > 0 },
+          { key: "stakeholderInput", question: "Provide any specific input or requirements from stakeholders (e.g., HR, legal team) for this employment agreement.", validation: input => true },
+          { key: "currency", question: "What currency is the salary in (e.g., INR)?", validation: validateCurrency },
+          { key: "monthlySalary", question: "What is the gross monthly salary?", validation: validateAmount },
+          { key: "jurisdictionState", question: "Which state governs the agreement (e.g., Karnataka)?", validation: validateState },
+          { key: "jurisdictionCity", question: "Which city for jurisdiction (e.g., Bengaluru)?", validation: input => input.trim().length > 0 }
+        ],
+        clauses: [
+          {
+            title: "Recitals",
+            text: "WHEREAS:\n(A) [employerName] operates in [businessDescription].\n(B) [employeeName] is hired to contribute to [businessDescription] as [jobTitle].\nNOW, THEREFORE, the Parties agree as follows:"
+          },
+          {
+            title: "Position and Duties",
+            text: "[employeeName] is employed as [jobTitle], performing duties specific to [businessDescription], including [stakeholderInput]. The Employee shall adhere to [employerName]'s policies and report as directed."
+          },
+          {
+            title: "Remuneration",
+            text: "[employerName] shall pay [employeeName] a gross monthly salary of [currency] [monthlySalary], subject to statutory deductions, paid monthly as per [stakeholderInput]."
+          },
+          {
+            title: "Confidentiality",
+            text: "[employeeName] shall not disclose proprietary information related to [businessDescription], including [stakeholderInput], during or after employment, except as authorized."
+          },
+          {
+            title: "Governing Law and Jurisdiction",
+            text: "This Agreement is governed by [jurisdictionState] laws, with exclusive jurisdiction in [jurisdictionCity] courts."
+          },
+          {
+            title: "Miscellaneous",
+            text: "* **Entire Agreement**: This Agreement governs [employeeName]'s employment for [businessDescription].\n* **Amendments**: Written consent required for changes.\n* **Severability**: Invalid clauses do not affect others."
+          }
+        ],
+        additionalClauses: [
+          {
+            title: "Remote Work Policy",
+            keywords: ["remote", "work from home", "telecommute", "virtual"],
+            text: "[employeeName] may work remotely for [businessDescription], subject to [stakeholderInput], ensuring compliance with [employerName]'s security protocols."
+          },
+          {
+            title: "Non-Compete",
+            keywords: ["non-compete", "competition", "rival", "compete"],
+            text: "For 12 months post-employment, [employeeName] shall not engage in [businessDescription]-related activities competing with [employerName], per [stakeholderInput]."
+          },
+          {
+            title: "Performance Metrics",
+            keywords: ["performance", "metrics", "evaluation", "kpi"],
+            text: "[employeeName]'s performance in [businessDescription] shall be evaluated based on [stakeholderInput], with reviews as specified."
+          }
+        ]
+      },
+      "Lease": {
+        detailQuestions: [
+          { key: "ownerName", question: "What is the Owner's full name or entity?", validation: input => input.trim().length > 0 },
+          { key: "tenantName", question: "What is the Tenant's full name or entity?", validation: input => input.trim().length > 0 },
+          { key: "premisesAddress", question: "What is the address of the Demised Premises?", validation: input => input.trim().length > 0 },
+          { key: "startDate", question: "What is the start date of the lease (DD/MM/YYYY)?", validation: validateDate },
+          { key: "endDate", question: "What is the end date of the lease (DD/MM/YYYY)?", validation: validateDate },
+          { key: "currency", question: "What currency is the rent in (e.g., INR)?", validation: validateCurrency },
+          { key: "monthlyRent", question: "What is the monthly rent amount?", validation: validateAmount },
+          { key: "premisesUse", question: "What is the intended use of the premises (e.g., residential, commercial)?", validation: input => input.trim().length > 0 },
+          { key: "stakeholderInput", question: "Provide any specific input or requirements from stakeholders (e.g., property manager, legal advisor) for this lease.", validation: input => true },
+          { key: "jurisdictionState", question: "Which state governs the agreement (e.g., Karnataka)?", validation: validateState },
+          { key: "jurisdictionCity", question: "Which city for jurisdiction (e.g., Bengaluru)?", validation: input => input.trim().length > 0 }
+        ],
+        clauses: [
+          {
+            title: "Recitals",
+            text: "WHEREAS:\n(A) [ownerName] owns [premisesAddress].\n(B) [tenantName] seeks to lease it for [premisesUse].\nNOW, THEREFORE, the Parties agree:"
+          },
+          {
+            title: "Lease Grant",
+            text: "[ownerName] leases [premisesAddress] to [tenantName] for [premisesUse] from [startDate] to [endDate], subject to [stakeholderInput]."
+          },
+          {
+            title: "Rent",
+            text: "[tenantName] shall pay [ownerName] [currency] [monthlyRent] monthly for [premisesUse], as per [stakeholderInput]."
+          },
+          {
+            title: "Use of Premises",
+            text: "[tenantName] shall use [premisesAddress] solely for [premisesUse], complying with [stakeholderInput] and applicable laws."
+          },
+          {
+            title: "Governing Law and Jurisdiction",
+            text: "This Agreement is governed by [jurisdictionState] laws, with exclusive jurisdiction in [jurisdictionCity] courts."
+          },
+          {
+            title: "Miscellaneous",
+            text: "* **Entire Agreement**: This Agreement governs the lease of [premisesAddress] for [premisesUse].\n* **Amendments**: Written consent required.\n* **Severability**: Invalid clauses do not affect others."
+          }
+        ],
+        additionalClauses: [
+          {
+            title: "Pet Policy",
+            keywords: ["pet", "animal", "dog", "cat", "pets"],
+            text: "[tenantName] may keep pets at [premisesAddress] for [premisesUse] only with [ownerName]'s consent, per [stakeholderInput], and is liable for pet-related damages."
+          },
+          {
+            title: "Maintenance Obligations",
+            keywords: ["maintenance", "repair", "upkeep", "fix"],
+            text: "[tenantName] shall handle minor repairs at [premisesAddress] for [premisesUse], while [ownerName] covers structural repairs, as specified by [stakeholderInput]."
+          },
+          {
+            title: "Subletting",
+            keywords: ["sublet", "sublease", "subtenant", "assign"],
+            text: "[tenantName] may sublet [premisesAddress] for [premisesUse] with [ownerName]'s written consent, per [stakeholderInput]."
+          }
+        ]
+      },
+      "Contractor": {
+        detailQuestions: [
+          { key: "clientName", question: "What is the Client's name or entity?", validation: input => input.trim().length > 0 },
+          { key: "contractorName", question: "What is the Contractor's name or entity?", validation: input => input.trim().length > 0 },
+          { key: "effectiveDate", question: "What is the effective date (DD/MM/YYYY)?", validation: validateDate },
+          { key: "servicesDescription", question: "Describe the services to be performed (e.g., software development)?", validation: input => input.trim().length > 0 },
+          { key: "currency", question: "What currency is the contract price in (e.g., INR)?", validation: validateCurrency },
+          { key: "contractPrice", question: "What is the total contract price?", validation: validateAmount },
+          { key: "stakeholderInput", question: "Provide any specific input or requirements from stakeholders (e.g., project manager, legal team) for this contract.", validation: input => true },
+          { key: "jurisdictionState", question: "Which state governs the agreement (e.g., Karnataka)?", validation: validateState },
+          { key: "jurisdictionCity", question: "Which city for jurisdiction (e.g., Bengaluru)?", validation: input => input.trim().length > 0 }
+        ],
+        clauses: [
+          {
+            title: "Recitals",
+            text: "WHEREAS:\n(A) [clientName] requires [servicesDescription].\n(B) [contractorName] is qualified to provide [servicesDescription].\nNOW, THEREFORE, the Parties agree:"
+          },
+          {
+            title: "Services",
+            text: "[contractorName] shall perform [servicesDescription] for [clientName], adhering to [stakeholderInput] and agreed specifications."
+          },
+          {
+            title: "Payment",
+            text: "[clientName] shall pay [contractorName] [currency] [contractPrice] for [servicesDescription], per [stakeholderInput]."
+          },
+          {
+            title: "Confidentiality",
+            text: "[contractorName] shall keep [servicesDescription]-related information confidential, per [stakeholderInput]."
+          },
+          {
+            title: "Governing Law and Jurisdiction",
+            text: "This Agreement is governed by [jurisdictionState] laws, with exclusive jurisdiction in [jurisdictionCity] courts."
+          },
+          {
+            title: "Miscellaneous",
+            text: "* **Entire Agreement**: This Agreement governs [servicesDescription].\n* **Amendments**: Written consent required.\n* **Severability**: Invalid clauses do not affect others."
+          }
+        ],
+        additionalClauses: [
+          {
+            title: "Milestone Payments",
+            keywords: ["milestone", "payment", "installment", "phase"],
+            text: "Payments for [servicesDescription] shall be made upon completion of milestones defined in [stakeholderInput], as agreed by [clientName] and [contractorName]."
+          },
+          {
+            title: "Warranty",
+            keywords: ["warranty", "guarantee", "assurance", "quality"],
+            text: "[contractorName] warrants [servicesDescription] for 90 days, per [stakeholderInput], ensuring compliance with specifications."
+          },
+          {
+            title: "Subcontracting",
+            keywords: ["subcontract", "delegate", "outsource", "third party"],
+            text: "[contractorName] may subcontract [servicesDescription] with [clientName]'s consent, per [stakeholderInput]."
+          }
+        ]
+      },
+      "Franchise": {
+        detailQuestions: [
+          { key: "franchisorName", question: "What is the Franchisor's name or entity?", validation: input => input.trim().length > 0 },
+          { key: "franchiseeName", question: "What is the Franchisee's name or entity?", validation: input => input.trim().length > 0 },
+          { key: "effectiveDate", question: "What is the effective date (DD/MM/YYYY)?", validation: validateDate },
+          { key: "businessType", question: "What type of business is the franchise (e.g., coffee shop)?", validation: input => input.trim().length > 0 },
+          { key: "territory", question: "What is the geographical territory (e.g., Bengaluru)?", validation: input => input.trim().length > 0 },
+          { key: "currency", question: "What currency is the franchise fee in (e.g., INR)?", validation: validateCurrency },
+          { key: "initialFranchiseFee", question: "What is the initial franchise fee?", validation: validateAmount },
+          { key: "stakeholderInput", question: "Provide any specific input or requirements from stakeholders (e.g., franchisor’s legal team, franchisee’s advisors) for this franchise agreement.", validation: input => true },
+          { key: "jurisdictionState", question: "Which state governs the agreement (e.g., Karnataka)?", validation: validateState },
+          { key: "jurisdictionCity", question: "Which city for jurisdiction (e.g., Bengaluru)?", validation: input => input.trim().length > 0 }
+        ],
+        clauses: [
+          {
+            title: "Recitals",
+            text: "WHEREAS:\n(A) [franchisorName] operates [businessType].\n(B) [franchiseeName] seeks to operate a [businessType] franchise.\nNOW, THEREFORE, the Parties agree:"
+          },
+          {
+            title: "Franchise Grant",
+            text: "[franchisorName] grants [franchiseeName] a license to operate a [businessType] franchise in [territory], per [stakeholderInput]."
+          },
+          {
+            title: "Fees",
+            text: "[franchiseeName] shall pay [franchisorName] [currency] [initialFranchiseFee] for the [businessType] franchise, per [stakeholderInput]."
+          },
+          {
+            title: "Standards",
+            text: "[franchiseeName] shall operate the [businessType] franchise per [franchisorName]'s standards and [stakeholderInput]."
+          },
+          {
+            title: "Governing Law and Jurisdiction",
+            text: "This Agreement is governed by [jurisdictionState] laws, with exclusive jurisdiction in [jurisdictionCity] courts."
+          },
+          {
+            title: "Miscellaneous",
+            text: "* **Entire Agreement**: This Agreement governs the [businessType] franchise.\n* **Amendments**: Written consent required.\n* **Severability**: Invalid clauses do not affect others."
+          }
+        ],
+        additionalClauses: [
+          {
+            title: "Marketing Obligations",
+            keywords: ["marketing", "advertising", "promotion", "brand"],
+            text: "[franchiseeName] shall contribute to [businessType] marketing efforts as specified in [stakeholderInput], approved by [franchisorName]."
+          },
+          {
+            title: "Audit Rights",
+            keywords: ["audit", "inspection", "review", "examine"],
+            text: "[franchisorName] may audit [franchiseeName]'s [businessType] operations, per [stakeholderInput], to ensure compliance."
+          },
+          {
+            title: "Training Requirements",
+            keywords: ["training", "education", "onboarding", "certification"],
+            text: "[franchiseeName] shall complete [businessType] training programs as mandated by [franchisorName] and [stakeholderInput]."
+          }
+        ]
+      }
+    };
+
+    // Question flow management
+    function askNextQuestion() {
+      const questions = agreementTypes[state.agreementType].detailQuestions;
+      if (state.currentQuestionIndex < questions.length) {
+        const question = questions[state.currentQuestionIndex].question;
+        appendMessage("bot", question);
+      } else {
+        state.step = 1.5;
+        state.extraClauseStage = "ask";
+        appendMessage("bot", "Would you like to add any extra clauses to the agreement? Type 'yes' to add a clause, 'no' to proceed to generation, 'custom' to add a custom clause, or describe a specific clause (e.g., 'restrict employee hiring').");
+      }
+    }
+
+    // Document generation
+    function generateDocument() {
+      const type = state.agreementType;
+      const clauses = agreementTypes[type].clauses;
+      let document = `# ${type} Agreement\n\n`;
+
+      // Add preamble
+      document += `**This ${type} Agreement** is made on [${state.details.effectiveDate || state.details.commencementDate || state.details.startDate}] by and between:\n`;
+      if (type === "NDA") {
+        document += `* [${state.details.disclosingParty}], the "Disclosing Party",\n* [${state.details.receivingParty}], the "Receiving Party".\n`;
+      } else if (type === "Employment") {
+        document += `* [${state.details.employerName}], the "Employer",\n* [${state.details.employeeName}], the "Employee".\n`;
+      } else if (type === "Lease") {
+        document += `* [${state.details.ownerName}], the "Owner",\n* [${state.details.tenantName}], the "Tenant".\n`;
+      } else if (type === "Contractor") {
+        document += `* [${state.details.clientName}], the "Client",\n* [${state.details.contractorName}], the "Contractor".\n`;
+      } else if (type === "Franchise") {
+        document += `* [${state.details.franchisorName}], the "Franchisor",\n* [${state.details.franchiseeName}], the "Franchisee".\n`;
+      }
+      document += `\n`;
+
+      // Add standard clauses (except Miscellaneous)
+      let clauseIndex = 1;
+      const miscClause = clauses.find(clause => clause.title === "Miscellaneous");
+      const standardClauses = clauses.filter(clause => clause.title !== "Miscellaneous");
+      standardClauses.forEach(clause => {
+        let clauseText = clause.text;
+        Object.keys(state.details).forEach(key => {
+          clauseText = clauseText.replace(new RegExp(`\\[${key}\\]`, 'g'), state.details[key]);
+        });
+        document += `## ${clauseIndex}. ${clause.title}\n${clauseText}\n\n`;
+        clauseIndex++;
+      });
+
+      // Add extra clauses
+      state.extraClauses.forEach(clause => {
+        let clauseText = clause.text;
+        Object.keys(state.details).forEach(key => {
+          clauseText = clauseText.replace(new RegExp(`\\[${key}\\]`, 'g'), state.details[key]);
+        });
+        document += `## ${clauseIndex}. ${clause.title}\n${clauseText}\n\n`;
+        clauseIndex++;
+      });
+
+      // Add Miscellaneous clause
+      if (miscClause) {
+        let clauseText = miscClause.text;
+        Object.keys(state.details).forEach(key => {
+          clauseText = clauseText.replace(new RegExp(`\\[${key}\\]`, 'g'), state.details[key]);
+        });
+        document += `## ${clauseIndex}. ${miscClause.title}\n${clauseText}\n\n`;
+      }
+
+      appendMessage("bot", document);
+      appendMessage("bot", "Document generated! You can copy the text above. Would you like to start over?");
+    }
+
+    // Input handling
+    function handleInput() {
+      const input = inputField.value.trim();
+      if (!input) return;
+
+      appendMessage("user", input);
+      inputField.value = "";
+
+      if (state.step === 0) {
+        const types = Object.keys(agreementTypes);
+        const selectedType = types.find(type => input.toLowerCase().includes(type.toLowerCase()));
+        if (selectedType) {
+          state.agreementType = selectedType;
+          state.step = 1;
+          state.currentQuestionIndex = 0;
+          appendMessage("bot", `Great! Let's create a tailored ${selectedType} agreement. I'll need specific details.`);
+          askNextQuestion();
+        } else {
+          appendMessage("bot", `Please specify a valid agreement type: ${types.join(", ")}.`);
+        }
+      } else if (state.step === 1) {
+        const question = agreementTypes[state.agreementType].detailQuestions[state.currentQuestionIndex];
+        if (question.validation(input)) {
+          state.details[question.key] = input;
+          state.currentQuestionIndex++;
+          askNextQuestion();
+        } else {
+          appendMessage("bot", `Invalid input for "${question.question}". Please try again.`);
+        }
+      } else if (state.step === 1.5) {
+        if (state.extraClauseStage === "ask") {
+          if (input.toLowerCase() === "no") {
+            state.step = 2;
+            generateDocument();
+          } else if (input.toLowerCase() === "yes") {
+            state.extraClauseStage = "describe";
+            appendMessage("bot", "What specific requirements do you want in the extra clause (e.g., 'restrict hiring for 1 year')?");
+          } else if (input.toLowerCase() === "custom") {
+            state.extraClauseStage = "custom";
+            appendMessage("bot", "Please provide the full text of your custom clause, including the title (e.g., 'Non-Disparagement: No negative statements...').");
+          } else {
+            const matchedClause = matchClause(input, state.agreementType, state.details);
+            if (matchedClause) {
+              state.extraClauses.push(matchedClause);
+              state.extraClauseStage = "more";
+              appendMessage("bot", `Added tailored clause: "${matchedClause.title}". Want to add another? Type 'yes', 'no', 'custom', or describe another clause.`);
+            } else {
+              state.extraClauseStage = "custom";
+              appendMessage("bot", "No matching clause found. Please provide the full text of your custom clause, including the title.");
+            }
+          }
+        } else if (state.extraClauseStage === "describe") {
+          const matchedClause = matchClause(input, state.agreementType, state.details);
+          if (matchedClause) {
+            state.extraClauses.push(matchedClause);
+            state.extraClauseStage = "more";
+            appendMessage("bot", `Added tailored clause: "${matchedClause.title}". Want to add another? Type 'yes', 'no', 'custom', or describe another clause.`);
+          } else {
+            state.extraClauseStage = "custom";
+            appendMessage("bot", "No matching clause found. Please provide the full text of your custom clause, including the title.");
+          }
+        } else if (state.extraClauseStage === "custom") {
+          if (input.trim().length > 0) {
+            const titleMatch = input.match(/^([^:]+):(.+)/);
+            if (titleMatch) {
+              const title = titleMatch[1].trim();
+              let text = titleMatch[2].trim();
+              // Incorporate stakeholder input if available
+              if (state.details.stakeholderInput) {
+                text += ` This clause is tailored per the following stakeholder requirements: ${state.details.stakeholderInput}.`;
+              }
+              if (title && text) {
+                state.extraClauses.push({ title, text });
+                state.extraClauseStage = "more";
+                appendMessage("bot", `Added custom clause: "${title}". Want to add another? Type 'yes', 'no', 'custom', or describe another clause.`);
+              } else {
+                appendMessage("bot", "Invalid format. Please provide the full text of your custom clause, including the title (e.g., 'Non-Disparagement: No negative statements...').");
+              }
+            } else {
+              appendMessage("bot", "Invalid format. Please provide the full text of your custom clause, including the title.");
+            }
+          } else {
+            appendMessage("bot", "Clause text cannot be empty. Please provide the full text of your custom clause.");
+          }
+        } else if (state.extraClauseStage === "more") {
+          if (input.toLowerCase() === "no") {
+            state.step = 2;
+            generateDocument();
+          } else if (input.toLowerCase() === "yes") {
+            state.extraClauseStage = "describe";
+            appendMessage("bot", "What specific requirements do you want in the next extra clause?");
+          } else if (input.toLowerCase() === "custom") {
+            state.extraClauseStage = "custom";
+            appendMessage("bot", "Please provide the full text of your custom clause, including the title.");
+          } else {
+            const matchedClause = matchClause(input, state.agreementType, state.details);
+            if (matchedClause) {
+              state.extraClauses.push(matchedClause);
+              appendMessage("bot", `Added tailored clause: "${matchedClause.title}". Want to add another? Type 'yes', 'no', 'custom', or describe another clause.`);
+            } else {
+              state.extraClauseStage = "custom";
+              appendMessage("bot", "No matching clause found. Please provide the full text of your custom clause, including the title.");
+            }
+          }
+        }
+      } else if (state.step === 2) {
+        if (input.toLowerCase().includes("start over") || input.toLowerCase().includes("yes")) {
+          state = { step: 0, agreementType: null, details: {}, currentQuestionIndex: 0, extraClauses: [], extraClauseStage: null, conversation: [] };
+          chatbox.innerHTML = "";
+          appendMessage("bot", "What type of legal agreement would you like to create? Options: NDA, Employment, Lease, Contractor, Franchise.");
+        } else {
+          appendMessage("bot", "Would you like to start over and create a new document?");
+        }
+      }
+    }
+
+    // Initialize
+    appendMessage("bot", "What type of legal agreement would you like to create? Options: NDA, Employment, Lease, Contractor, Franchise.");
+  </script>
 </body>
 </html>
